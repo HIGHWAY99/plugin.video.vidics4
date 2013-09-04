@@ -2,7 +2,7 @@
 ###	#	
 ### # Project: 			#		Vidics4.com - by The Highway 2013.
 ### # Author: 			#		The Highway
-### # Version:			#		v0.2.4
+### # Version:			#		v0.2.5
 ### # Description: 	#		http://www.Vidics4.com
 ###	#	
 ### ############################################################################################################
@@ -846,7 +846,7 @@ def listLinks(section, url, showtitle='', showyear=''): ### Menu for Listing Hos
 		#if (_debugging==True): print match
 		#(IMDbURL,IMDbID)=match; IMDbURL=IMDbURL.strip(); IMDbID=IMDbID.strip(); My_infoLabels={ "Studio": ShowTitle+'  ('+ShowYear+')', "Title": ShowTitle, "ShowTitle": ShowTitle, "Year": ShowYear, "Plot": ShowPlot, 'IMDbURL': IMDbURL, 'IMDbID': IMDbID, 'IMDb': IMDbID }; listitem.setInfo(type="Video", infoLabels=My_infoLabels )
 	### Both -Movies- and -TV Shows- ### Hosters
-	s ='<tr>\n*\s*<td><center><a target="_blank" href="(http://.+?)" target="_blank" rel="nofollow">\s*(Version\s*\d+)\s*</a></center></td>\n*\s*<p><!--ENTER LINK HERE --></p>\n*\s*<td><center>\s*(.+?)\s*</center></td>\n*\s*<p><!--ENTER NAME HERE --></tr>'
+	s ='<tr>\n*\s*<td><center><a.*? href="(http://.+?)".*?>\s*(Version\s*\d+)\s*</a></center></td>\n*\s*<p><!--ENTER LINK HERE --></p>\n*\s*<td><center>\s*(.+?)\s*</center></td>\n*\s*<p><!--ENTER NAME HERE --></tr>'
 	#match=re.compile(s, re.MULTILINE | re.DOTALL | re.IGNORECASE).findall(html)
 	match=re.compile(s).findall(html)
 	if (len(match) > 0):
@@ -1007,6 +1007,8 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 	if (url==''): return
 	#if (chck=='Latest'): url=url+chr(35)+'latest'
 	WhereAmI('@ the Item List -- url: %s' % url)
+	if ('?' in url): ex='?'+url.split('?')[1]
+	else: ex=''
 	start=int(startPage); end=(start+int(numOfPages)); html=''; html_last=''; nextpage=startPage; deb('page start',str(start)); deb('page end',str(end))
 	try: html_=net.http_GET(url).content
 	except: 
@@ -1018,7 +1020,7 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 	if (html_=='') or (html_=='none') or (html_==None): 
 		deb('Error','Problem with page'); deadNote('Results:  '+section,'No results were found.')
 		return
-	try:		last=int(re.compile('<a href="http://.+?/page/(\d+)/">&raquo;</a>').findall(html_))[0] #, re.IGNORECASE | re.DOTALL).findall(html_))[0]
+	try:		last=int(re.compile('<a href="http://.+?/page/(\d+)/.*"\s*>\s*[last]*\s*&raquo;\s*</a>').findall(html_))[0] #, re.IGNORECASE | re.DOTALL).findall(html_))[0]
 	except:	last=2
 	deb('number of pages',str(last))
 	#print min(last,end)
@@ -1033,7 +1035,7 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 		if (int(page)> 1): #if (int(startPage)> 1):
 			#if ('&page=' in url): pageUrl=url.replace('&page=','&pagenull=')+'&page='+str(page) ## Quick fix.
 			#if ('?page=' in url): pageUrl=url.replace('?page=','?pagenull=')+'&page='+str(page) ## Quick fix.
-			if ('/page/' in url): pageUrl=url.split('/page/')[0]+'/page/'+str(page)+'/' ## Quick fix.
+			if ('/page/' in url): pageUrl=url.split('/page/')[0]+'/page/'+str(page)+'/'+ex ## Quick fix.
 			else: pageUrl=url+urlSplitter+str(page)+'/' #ps('LI.page.param')+startPage
 		else: pageUrl=url
 		deb('item listings for',pageUrl)
@@ -1059,6 +1061,7 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 	###	### _addon.add_directory({'mode': 'GetTitles', 'url': url, 'startPage': str(end), 'numOfPages': numOfPages}, {'title': 'Next...'})
 	###html=nolines(html)
 	html=ParseDescription(html); html=remove_accents(html) #if (_debugging==True): print html
+	html=messupText(html,_html=True,_ende=True,_a=False,Slashes=False)
 	if (section==ps('section.tv')) and (season=='') and (episode==''): ## TV Show
 		deb('listItems >> ',section); deb('listItems >> chck',chck)
 		eod(); return
@@ -1105,7 +1108,7 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 		##	except:	iitems=None
 		##	#iitems=re.compile(ps('LI.movies.match.items3'), re.MULTILINE | re.IGNORECASE | re.DOTALL).findall(html)
 		if (iitems==None):
-			deb('Item Results','None Found'); deadNote('Results:  '+section,'No results were found.'); return
+			deb('Item Results','None Found'); deadNote('Results:  '+section,'No results were found.'); eod(); return
 		ItemCount=len(iitems) # , total_items=ItemCount
 		##iitems=sorted(iitems, key=lambda item: (item[0],item[3]))
 		#for name, item_url, thumbnail, year in iitems:
@@ -1116,8 +1119,10 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 			#name=ParseDescription(HTMLParser.HTMLParser().unescape(name)); name=name.encode('ascii', 'ignore'); name=name.decode('iso-8859-1') #; name = remove_accents(name)
 			labs['year']=year
 			labs['title']=title
+			labs['title']+='  ('+year+')'
 			#labs['imdb']=imdbID
 			#
+			contextMenuItems.append(('Show Information','XBMC.Action(Info)'))
 			_addon.add_directory(pars, labs, img=img, fanart=img, contextmenu_items=contextMenuItems, total_items=ItemCount)
 			#contextMenuItems=[]; name=ParseDescription(HTMLParser.HTMLParser().unescape(name)); name=name.encode('ascii', 'ignore'); name=name.decode('iso-8859-1') #; name = remove_accents(name)
 			#name=_addon.decode(name); name=_addon.unescape(name)
@@ -1705,20 +1710,22 @@ def Menu_LoadCategories(section=_default_section_): #Categories
 def Menu_MainMenu(): #The Main Menu
 	WhereAmI('@ the Main Menu')
 	_addon.add_directory({'mode': 'BrowseGenre', 'section': ps('section.movie')},		{'title':  cFL('C',ps('cFL_color'))+'ategories'}  ,img=art('movies')				,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.movie')},		{'title':  cFL('M',ps('cFL_color'))+'ovies'}  ,img=art('movies')				,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.tv')}, 			{'title':  cFL('T',ps('cFL_color'))+'V Shows'},img=art('television')		,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.trailers')},	{'title':  cFL('C',ps('cFL_color'))+'oming Soon'},img=ps('img.comingsoon'),fanart=_artFanart)
-	#_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.users')},		{'title':  cFL('U',ps('cFL_color'))+'sers'}		,img=ps('img.usersection'),fanart=_artFanart)
-	#_addon.add_directory({'mode': 'GetLatestSearches', 'section': 'Both'},		{'title':  cFL('L',ps('cFL_color'))+'atest Searches'}		,img=art('icon-search')		,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.movie')},		{'title':  cFL('M',ps('cFL_color'))+'ovies'}  ,img=art('movies')				,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.tv')}, 			{'title':  cFL('T',ps('cFL_color'))+'V Shows'},img=art('television')		,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.trailers')},	{'title':  cFL('C',ps('cFL_color'))+'oming Soon'},img=ps('img.comingsoon'),fanart=_artFanart)
+	##_addon.add_directory({'mode': 'LoadCategories', 'section': ps('section.users')},		{'title':  cFL('U',ps('cFL_color'))+'sers'}		,img=ps('img.usersection'),fanart=_artFanart)
+	##_addon.add_directory({'mode': 'GetLatestSearches', 'section': 'Both'},		{'title':  cFL('L',ps('cFL_color'))+'atest Searches'}		,img=art('icon-search')		,fanart=_artFanart)
+	#_addon.add_directory({'section': ps('section.movie'), 'mode': 'Search', 				'pageno': '1', 'pagecount': addst('pages')},			{'title':  cFL('S',ps('cFL_color'))+'earch'}, 						fanart=_artFanart,img=art('icon-search'))
+	#_addon.add_directory({'section': ps('section.movie'), 'mode': 'AdvancedSearch', 'pageno': '1', 'pagecount': addst('pages')},	 		{'title':  cFL('A',ps('cFL_color'))+'dvanced Search'}, 		fanart=_artFanart,img=art('icon-search'))
 	_addon.add_directory({'mode': 'ResolverSettings'}, {'title':  cFL('U',ps('cFL_color'))+'rl-Resolver Settings'},is_folder=False		,img=art('turtle','.jpg')	,fanart=_artFanart)
-	_addon.add_directory({'mode': 'Settings'}, 				 {'title':  cFL('P',ps('cFL_color'))+'lugin Settings'}			,is_folder=False		,img=_artSun							,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'DownloadStop'}, 		 {'title':  cFL('S',ps('cFL_color'))+'top Current Download'},is_folder=False		,img=_artDead							,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'TextBoxFile',  'title': "[COLOR cornflowerblue]Local Change Log:[/COLOR]  %s"  % (__plugin__), 'url': ps('changelog.local')}, 	{'title': cFL('L',ps('cFL_color'))+'ocal Change Log'},					img=art('thechangelog','.jpg'), is_folder=False ,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'TextBoxUrl',   'title': "[COLOR cornflowerblue]Latest Change Log:[/COLOR]  %s" % (__plugin__), 'url': ps('changelog.url')}, 		{'title': cFL('L',ps('cFL_color'))+'atest Online Change Log'},	img=art('thechangelog','.jpg'), is_folder=False ,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'TextBoxUrl',   'title': "[COLOR cornflowerblue]Latest News:[/COLOR]  %s"       % (__plugin__), 'url': ps('news.url')}, 				{'title': cFL('L',ps('cFL_color'))+'atest Online News'},				img=_art404										, is_folder=False ,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'LatestThreads','title': "[COLOR cornflowerblue]Latest Threads[/COLOR]", 'url': ps('LatestThreads.url')}, 											{'title': cFL('L',ps('cFL_color'))+'atest Threads'},						img=_art404										, is_folder=False ,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'PrivacyPolicy','title': "", 'url': ''}, 																																												{'title': cFL('P',ps('cFL_color'))+'rivacy Policy'},						img=_art404										, is_folder=False ,fanart=_artFanart)
-	#_addon.add_directory({'mode': 'TermsOfService','title': "", 'url': ''}, 																																											{'title': cFL('T',ps('cFL_color'))+'erms of Service'},					img=_art404										, is_folder=False ,fanart=_artFanart)
+	_addon.add_directory({'mode': 'Settings'}, 				 {'title':  cFL('P',ps('cFL_color'))+'lugin Settings'}			,is_folder=False		,img='http://vidics4.com/wp-content/themes/stargate/logo/logo.png'	,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'DownloadStop'}, 		 {'title':  cFL('S',ps('cFL_color'))+'top Current Download'},is_folder=False		,img=_artDead							,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'TextBoxFile',  'title': "[COLOR cornflowerblue]Local Change Log:[/COLOR]  %s"  % (__plugin__), 'url': ps('changelog.local')}, 	{'title': cFL('L',ps('cFL_color'))+'ocal Change Log'},					img=art('thechangelog','.jpg'), is_folder=False ,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'TextBoxUrl',   'title': "[COLOR cornflowerblue]Latest Change Log:[/COLOR]  %s" % (__plugin__), 'url': ps('changelog.url')}, 		{'title': cFL('L',ps('cFL_color'))+'atest Online Change Log'},	img=art('thechangelog','.jpg'), is_folder=False ,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'TextBoxUrl',   'title': "[COLOR cornflowerblue]Latest News:[/COLOR]  %s"       % (__plugin__), 'url': ps('news.url')}, 				{'title': cFL('L',ps('cFL_color'))+'atest Online News'},				img=_art404										, is_folder=False ,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'LatestThreads','title': "[COLOR cornflowerblue]Latest Threads[/COLOR]", 'url': ps('LatestThreads.url')}, 											{'title': cFL('L',ps('cFL_color'))+'atest Threads'},						img=_art404										, is_folder=False ,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'PrivacyPolicy','title': "", 'url': ''}, 																																												{'title': cFL('P',ps('cFL_color'))+'rivacy Policy'},						img=_art404										, is_folder=False ,fanart=_artFanart)
+	##_addon.add_directory({'mode': 'TermsOfService','title': "", 'url': ''}, 																																											{'title': cFL('T',ps('cFL_color'))+'erms of Service'},					img=_art404										, is_folder=False ,fanart=_artFanart)
 	### ############ 
 	set_view('list',addst('default-view')); eod()
 	### ############ 
@@ -1825,12 +1832,13 @@ def fav__list(section,subfav=''):
 ### ############################################################################################################
 ##### Search #####
 def doSearchNormal (section,title=''):
-	if (section=='tv'): SearchPrefix=ps('domain.search.tv')
-	else: SearchPrefix=ps('domain.search.movie')
+	if (section=='tv'): SearchPrefix='http://vidics4.com/?s=%s&x=0&y=0'
+	else: SearchPrefix='http://vidics4.com/?s=%s&x=0&y=0'
 	if (title==''):
 		title=showkeyboard(txtMessage=title,txtHeader="Title:  ("+section+")")
 		if (title=='') or (title=='none') or (title==None) or (title==False): return
-	_param['url']=SearchPrefix+title; deb('Searching for',_param['url']); listItems(section, _param['url'], _param['pageno'], addst('pages'), _param['genre'], _param['year'], _param['title'])
+		_param['url']=SearchPrefix % (title.replace(' ','+'))
+		deb('Searching for',_param['url']); listItems(section, _param['url'], _param['pageno'], addst('pages'), _param['genre'], _param['year'], _param['title'])
 
 def doSearchAdvanced (section,title=''):
 	txtHeader='Advanced Search'; options={}; r= -1
