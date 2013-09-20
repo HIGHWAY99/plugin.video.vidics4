@@ -2,7 +2,7 @@
 ###	#	
 ### # Project: 			#		Vidics4.com - by The Highway 2013.
 ### # Author: 			#		The Highway
-### # Version:			#		v0.2.5
+### # Version:			#		v0.2.6
 ### # Description: 	#		http://www.Vidics4.com
 ###	#	
 ### ############################################################################################################
@@ -1088,15 +1088,22 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 		##s+='<a target="_blank" href="http://www.imdb.com/title/(tt\d+)/">'
 		deb('Length of HTML',str(len(html)))
 		#print html
-		s ='<div class="afis">\n*\s*\n*\s*\n*\s*\n*\s*<a href="(http://vidics4.com/watch-.+?/)" title="Watch .+?"><img src="(http://vidics4.com/wp-content/themes/.+?)"'
-		s+=' width="\d+" height="\d+" alt="Watch .+?"/><div src="" class="kucukIcon"></div></a>'
-		s+='\n*\s*\n*\s*\n*\s*\n*\s*</div>\n*\s*\n*\s*\n*\s*\n*\s*<div class="film">'
-		s+='\n*\s*\n*\s*<p><span class="kalin">Movie Name:</span> <a href="http://vidics4.com/watch-.+?" title="Watch .+?">Watch (.+?) \((\d\d\d\d)\) Online Movie</a></p>'
-		#s+='\n*\s*\n*\s*<p><span class="kalin">Genre:</span>(.*?)</p>'
-		#s+='\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*<p><span class="kalin">Release Date:</span> (\D+ \d+, \d\d\d\d)</p>'
-		#s+='\n*\s*\n*\s*<p><span class="kalin">Director:</span>(.*?)*</p>'
-		#s+='\n*\s*\n*\s*<p><span class="kalin">Cast:</span>(.*?)*</p>'
-		#s+='\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*<a target="_blank" href="http://www.imdb.com/title/(tt[0-9]+)/">'
+		#s ='<div class="afis">\n*\s*\n*\s*\n*\s*\n*\s*<a href="(http://vidics4.com/watch-.+?/)" title=".+?"><img src="(http://vidics4.com/wp-content/themes/.+?)"'
+		#s+=' width="\d+" height="\d+" alt=".+?"/><div src="" class="kucukIcon"></div></a>'
+		#s+='\n*\s*\n*\s*\n*\s*\n*\s*</div>\n*\s*\n*\s*\n*\s*\n*\s*<div class="film">'
+		#s+='\n*\s*\n*\s*<p><span class="kalin">[Movie]*\s*Name:</span>\s*<a\s+href="http://vidics4.com/watch-.+?"\s+title=".+?">\s*(.+?)\s*\((\d\d\d\d)\) Online Movie</a></p>'
+		##s+='\n*\s*\n*\s*<p><span class="kalin">Genre:</span>(.*?)</p>'
+		##s+='\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*<p><span class="kalin">Release Date:</span> (\D+ \d+, \d\d\d\d)</p>'
+		##s+='\n*\s*\n*\s*<p><span class="kalin">Director:</span>(.*?)*</p>'
+		##s+='\n*\s*\n*\s*<p><span class="kalin">Cast:</span>(.*?)*</p>'
+		##s+='\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*\n*\s*<a target="_blank" href="http://www.imdb.com/title/(tt[0-9]+)/">'
+		#
+		#s ='<a\s*href="(http://[A-Za-z0-9\.\-_]*/[A-Za-z0-9\.\-_]*-\d\d\d\d/)"\s*title="(.+?)\s*\((\d\d\d\d)\)"\s*[/]*>\s*\n*\s*'
+		#s+='<img src="(http://[A-Za-z0-9\.\-_/]*\?src=http://[A-Za-z0-9\.\-_/]*/wp-content/uploads/\d\d\d\d/\d\d/[A-Za-z0-9\.\-_/]*\.[jpg|png].+?)"\s*width="\d*"\s*height="\d*"\s*alt=".+?\s*\(\d\d\d\d\)"\s*[/]*>'
+		#
+		s ='<a\s*href="(http://[A-Za-z0-9\.\-_]*/[A-Za-z0-9\.\-_]*-\d\d\d\d[A-Za-z0-9\.\-_]*/)"\s*title="(.+?)\s*\((\d\d\d\d)\)"\s*[/]*>\s*\n*\s*'
+		s+='<img\s*src="(http://.+?)"'
+		#
 		#return
 		iitems=re.compile(s).findall(html)
 		#iitems=re.compile(s, re.DOTALL).findall(html)
@@ -1112,9 +1119,10 @@ def listItems(section=_default_section_, url='', startPage='1', numOfPages='1', 
 		ItemCount=len(iitems) # , total_items=ItemCount
 		##iitems=sorted(iitems, key=lambda item: (item[0],item[3]))
 		#for name, item_url, thumbnail, year in iitems:
-		print iitems
+		debob(iitems)
 		#for url,img,title,year,genres,releasedate,directors,cast,imdbID in iitems:
-		for url,img,title,year in iitems:
+		#for url,img,title,year in iitems:
+		for url,title,year,img in iitems:
 			contextMenuItems=[]; labs={}; pars={'mode':'GetLinks','section':section,'year':year,'title':title,'img':img,'url':url}
 			#name=ParseDescription(HTMLParser.HTMLParser().unescape(name)); name=name.encode('ascii', 'ignore'); name=name.decode('iso-8859-1') #; name = remove_accents(name)
 			labs['year']=year
